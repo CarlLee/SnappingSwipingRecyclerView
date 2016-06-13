@@ -1,3 +1,8 @@
+Preview
+=======
+![preview](https://raw.githubusercontent.com/CarlLee/SnappingSwipingRecyclerView/master/preview.gif)
+
+
 Intro
 =====
 SnappingSwipingRecyclerView is an implementation of "viewpager-like" behavior of RecyclerView, 
