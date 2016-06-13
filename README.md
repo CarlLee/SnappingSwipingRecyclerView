@@ -1,6 +1,6 @@
 Preview
 =======
-![preview](https://raw.githubusercontent.com/CarlLee/SnappingSwipingRecyclerView/master/preview.gif)
+<img src="https://raw.githubusercontent.com/CarlLee/SnappingSwipingRecyclerView/master/preview.gif" align="left" height="480" width="320" >
 
 
 Intro
