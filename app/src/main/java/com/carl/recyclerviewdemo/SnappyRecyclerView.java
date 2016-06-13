@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 
 /**
+ * Subclass of RecyclerView that delegates all fling logic to its layout manager
  * @author carl
  */
 public class SnappyRecyclerView extends RecyclerView {

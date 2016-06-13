@@ -21,13 +21,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Helper class to setup RecyclerView for the "long press to swipe" gesture
+ * TODO: Add vertical support
  * @author carl
  */
 public class SwipeGestureHelper implements View.OnTouchListener {
 
     private static final String TAG = "SwipeGestureHelper";
+    public static final float DEFAULT_SCALE_OFFSET = 0.03F;
+    public static final long DEFAULT_ANIMATION_DURATION = 300;
     public static final float DEFAULT_SWIPE_THRESHOLD_RATIO = 0.4F;
-    private static final float DEFAULT_SWIPE_THRESHOLD_SPEED_DP_PER_SECOND = 800F;
+    public static final float DEFAULT_SWIPE_THRESHOLD_SPEED_DP_PER_SECOND = 800F;
 
     private RecyclerView mRecyclerView;
     private boolean mLongPressInAction;
@@ -46,6 +50,10 @@ public class SwipeGestureHelper implements View.OnTouchListener {
     private float mSwipeThresholdRatio = DEFAULT_SWIPE_THRESHOLD_RATIO;
     private float mSwipeThresholdSpeedDpPerSecond = DEFAULT_SWIPE_THRESHOLD_SPEED_DP_PER_SECOND;
     private OnSwipeListener mOnSwipeListener;
+    private float mScaleAnimationOffset = DEFAULT_SCALE_OFFSET;
+    private long mScaleAnimationDuration = DEFAULT_ANIMATION_DURATION;
+    private long mOutAnimationDuration = DEFAULT_ANIMATION_DURATION;
+    private long mRecoverAnimationDuration = DEFAULT_ANIMATION_DURATION;
 
     private List<Animator> mRunningAnimators = new ArrayList<>();
 
@@ -62,6 +70,12 @@ public class SwipeGestureHelper implements View.OnTouchListener {
         return mSwipeThresholdRatio;
     }
 
+    /**
+     * Sets the ratio threshold which determines if a swipe is successful, default is 0.4F.
+     * Speed takes precedence over dragging distance in determine if a swipe is successful.
+     * @param threshold the ratio between the distance user has dragged the item view and the
+     *                  height/width of parent
+     */
     public void setSwipeThresholdRatio(float threshold) {
         this.mSwipeThresholdRatio = threshold;
     }
@@ -70,8 +84,65 @@ public class SwipeGestureHelper implements View.OnTouchListener {
         return mSwipeThresholdSpeedDpPerSecond;
     }
 
+    /**
+     * Sets the speed threshold which determines if a swipe is successful, default is 800F.
+     * Speed takes precedence over dragging distance in determine if a swipe is successful.
+     * @param swipeThresholdSpeedDpPerSecond the threshold speed of user's swipe in DP per second
+     */
     public void setSwipeThresholdSpeedDpPerSecond(float swipeThresholdSpeedDpPerSecond) {
         mSwipeThresholdSpeedDpPerSecond = swipeThresholdSpeedDpPerSecond;
+    }
+
+    public float getScaleAnimationOffset() {
+        return mScaleAnimationOffset;
+    }
+
+    /**
+     * Sets the magnitude of change in scale for the scale animation when user long presses an item
+     * view. The selected item view will be scaled up to 1.0F + scaleAnimationOffset, other item
+     * views will be scaled down to 1.0F - scaleAnimationOffset.
+     * @param scaleAnimationOffset the magnitude of change in scale for scale animations
+     */
+    public void setScaleAnimationOffset(float scaleAnimationOffset) {
+        mScaleAnimationOffset = scaleAnimationOffset;
+    }
+
+    public long getScaleAnimationDuration() {
+        return mScaleAnimationDuration;
+    }
+
+    /**
+     * Sets the duration of scale animation
+     * @param scaleAnimationDuration the animation duration
+     */
+    public void setScaleAnimationDuration(long scaleAnimationDuration) {
+        mScaleAnimationDuration = scaleAnimationDuration;
+    }
+
+    public long getOutAnimationDuration() {
+        return mOutAnimationDuration;
+    }
+
+    /**
+     * Sets the duration of out animation when a swipe is successful and the selected view is
+     * transitioning out of sight
+     * @param outAnimationDuration the animation duration
+     */
+    public void setOutAnimationDuration(long outAnimationDuration) {
+        mOutAnimationDuration = outAnimationDuration;
+    }
+    public long getRecoverAnimationDuration() {
+        return mRecoverAnimationDuration;
+    }
+
+
+    /**
+     * Sets the duration of recover animation when views are recovering into their original scale
+     * and position when user's finger lifts
+     * @param recoverAnimationDuration the animation duration
+     */
+    public void setRecoverAnimationDuration(long recoverAnimationDuration) {
+        mRecoverAnimationDuration = recoverAnimationDuration;
     }
 
     public void setOnSwipeListener(OnSwipeListener listener) {
@@ -110,10 +181,12 @@ public class SwipeGestureHelper implements View.OnTouchListener {
             float currentScale = v.getScaleX();
 
             float translationY = v.getTranslationY();
-            List<Animator> recoverAnimatorList = makeScaleAnimatorList(v, currentScale, 1.0f, 300);
+            List<Animator> recoverAnimatorList = makeScaleAnimatorList(v, currentScale, 1.0f,
+                    mRecoverAnimationDuration);
             if (translationY != 0) {
                 ObjectAnimator translationYAnimator =
                         ObjectAnimator.ofFloat(v, View.TRANSLATION_Y, translationY, 0);
+                translationYAnimator.setDuration(mRecoverAnimationDuration);
                 recoverAnimatorList.add(translationYAnimator);
             }
 
@@ -225,6 +298,7 @@ public class SwipeGestureHelper implements View.OnTouchListener {
         if (listener != null) {
             outAnimation.addListener(listener);
         }
+        outAnimation.setDuration(mOutAnimationDuration);
         holder.playAnimator(outAnimation);
     }
 
@@ -319,7 +393,10 @@ public class SwipeGestureHelper implements View.OnTouchListener {
 
                     mSelectedView = v;
                     mSelectedAnimatorHolder.setView(mSelectedView);
-                    mSelectedAnimatorHolder.playAnimator(makeScaleAnimatorSet(mSelectedView, 1.0f, 1.03f, 300));
+                    if (mScaleAnimationDuration > 0) {
+                        mSelectedAnimatorHolder.playAnimator(makeScaleAnimatorSet(mSelectedView,
+                                1.0F, 1.0F + mScaleAnimationOffset, mScaleAnimationDuration));
+                    }
 
                     int adapterPos = rv.getChildAdapterPosition(v);
                     mSelectedAdapterPos = adapterPos;
@@ -329,13 +406,19 @@ public class SwipeGestureHelper implements View.OnTouchListener {
                     View prevView = lm.findViewByPosition(adapterPos - 1);
                     if (prevView != null) {
                         mPrevAnimatorHolder.setView(prevView);
-                        mPrevAnimatorHolder.playAnimator(makeScaleAnimatorSet(prevView, 1.0f, 0.97f, 300));
+                        if (mScaleAnimationDuration > 0) {
+                            mPrevAnimatorHolder.playAnimator(makeScaleAnimatorSet(prevView, 1.0f,
+                                    1.0F - mScaleAnimationOffset, mScaleAnimationDuration));
+                        }
                     }
 
                     View nextView = lm.findViewByPosition(adapterPos + 1);
                     if (nextView != null) {
                         mNextAnimatorHolder.setView(nextView);
-                        mNextAnimatorHolder.playAnimator(makeScaleAnimatorSet(nextView, 1.0f, 0.97f, 300));
+                        if (mScaleAnimationDuration > 0) {
+                            mNextAnimatorHolder.playAnimator(makeScaleAnimatorSet(nextView, 1.0f,
+                                    1.0F - mScaleAnimationOffset, mScaleAnimationDuration));
+                        }
                     }
 
                     Log.d(TAG, String.format("onLongPress: %s, %s, %s", prevView, mSelectedView, nextView));

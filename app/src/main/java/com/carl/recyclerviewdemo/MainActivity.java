@@ -3,8 +3,6 @@ package com.carl.recyclerviewdemo;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.TypedValue;
@@ -12,9 +10,11 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements SwipeGestureHelper.OnSwipeListener {
@@ -27,35 +27,25 @@ public class MainActivity extends AppCompatActivity implements SwipeGestureHelpe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv);
-        if (recyclerView == null) {
-            return;
-        }
-        SnappyLinearLayoutManager lm = new SnappyLinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        lm.setFlingVelocityRatio(0.7f);
-//        LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        recyclerView.setLayoutManager(lm);
+        RelativeLayout rl = (RelativeLayout) findViewById(R.id.container);
 
         ArrayList<String> strings = new ArrayList<>();
-
-        for (int i = 0; i < TEST_STRINGS.length; i++) {
-            strings.add(TEST_STRINGS[i]);
-        }
-
+        Collections.addAll(strings, TEST_STRINGS);
         mAdapter = new SimpleAdapter(strings);
-        recyclerView.setAdapter(mAdapter);
-//        recyclerView.setHasFixedSize(true);
-        recyclerView.setScrollingTouchSlop(RecyclerView.TOUCH_SLOP_PAGING);
-//        recyclerView.setItemAnimator(new SlideInAnimator());
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-        recyclerView.addItemDecoration(new MarginFixDecoration());
-        ViewOnTouchDelegate delegate = new ViewOnTouchDelegate();
-        recyclerView.setOnTouchListener(delegate);
-        SwipeGestureHelper swipeGestureHelper = new SwipeGestureHelper(getApplicationContext());
-        swipeGestureHelper.attachToRecyclerView(recyclerView, delegate);
-        swipeGestureHelper.setOnSwipeListener(this);
-//        PanDownTransitionGestureHelper panDownHelper = new PanDownTransitionGestureHelper();
-//        panDownHelper.attachToRecyclerView(recyclerView, delegate);
+
+        RecyclerView recyclerView = new SnappingSwipingViewBuilder(this)
+                .setAdapter(mAdapter)
+                .setHeadTailExtraMarginDp(17F)
+                .setItemMarginDp(8F, 20F, 8F, 20F)
+                .setOnSwipeListener(this)
+                .setSnapMethod(SnappyLinearLayoutManager.SnappyLinearSmoothScroller.SNAP_CENTER)
+                .build();
+
+        if (rl != null) {
+            recyclerView.setLayoutParams(new ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            rl.addView(recyclerView);
+        }
     }
 
     @Override
@@ -64,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements SwipeGestureHelpe
         rv.invalidateItemDecorations();
     }
 
-    static class SimpleViewHolder extends RecyclerView.ViewHolder {
+    class SimpleViewHolder extends RecyclerView.ViewHolder {
 
         public final TextView mTextView;
 
@@ -74,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements SwipeGestureHelpe
         }
     }
 
-    static class SimpleAdapter extends RecyclerView.Adapter<SimpleViewHolder> {
+    class SimpleAdapter extends RecyclerView.Adapter<SimpleViewHolder> {
         private final List<String> mDataSet;
 
         public SimpleAdapter(List<String> dataSet) {
@@ -89,18 +79,28 @@ public class MainActivity extends AppCompatActivity implements SwipeGestureHelpe
         @Override
         public SimpleViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             Log.d(TAG, "onCreateViewHolder");
-            LinearLayout ll = new LinearLayout(parent.getContext());
+//            LinearLayout ll = new LinearLayout(parent.getContext());
             TextView tv = new TextView(parent.getContext());
             tv.setTextColor(Color.WHITE);
-            tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            ll.addView(tv);
+//            tv.setLayoutParams(new ViewGroup.LayoutParams(
+//                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
+//            ll.addView(tv);
             int w = parent.getWidth();
-            int h = parent.getHeight();
-            int childW = (int) (w * 0.7);
-            ll.setPadding(40, 40, 40, 40);
-            ViewGroup.MarginLayoutParams lp = new ViewGroup.MarginLayoutParams(childW, h);
-            ll.setLayoutParams(lp);
-            return new SimpleViewHolder(ll, tv);
+            int itemMargin = (int) (TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 9F,
+                    getResources().getDisplayMetrics()) + 0.5F);
+            int itemPadding = (int) (TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8F,
+                    getResources().getDisplayMetrics()) + 0.5F);
+            int itemWidth = w - (itemMargin + itemPadding * 2) * 2;
+            tv.setLayoutParams(new ViewGroup.LayoutParams(
+                    itemWidth, ViewGroup.LayoutParams.MATCH_PARENT));
+//            int h = parent.getHeight();
+//            int childW = (int) (w * 0.7);
+//            ll.setPadding(itemPadding, itemPadding, itemPadding, itemPadding);
+//            ViewGroup.MarginLayoutParams lp = new ViewGroup.MarginLayoutParams(
+//                    itemWidth, ViewGroup.LayoutParams.MATCH_PARENT);
+//            ll.setLayoutParams(lp);
+//            ll.setBackground(getDrawable(R.drawable.round_rect_border));
+            return new SimpleViewHolder(tv, tv);
         }
 
         private int getColor(int position) {

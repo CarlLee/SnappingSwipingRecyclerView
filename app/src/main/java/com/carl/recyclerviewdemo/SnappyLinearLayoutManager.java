@@ -15,6 +15,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
+ * Layout manager that supports snapping into position
+ * TODO: Add vertical support
  * @author carl
  */
 public class SnappyLinearLayoutManager extends LinearLayoutManager implements SnappyScrollCalculator {
@@ -29,7 +31,7 @@ public class SnappyLinearLayoutManager extends LinearLayoutManager implements Sn
     }
 
     private static final float DEFAULT_FLING_VELOCITY_DISTANCE_RATIO = 0.18F;
-    private static final float DEFAULT_FLING_VELOCITY_RATIO = 0.5F;
+    private static final float DEFAULT_FLING_VELOCITY_RATIO = 0.7F;
     private static final float MAX_MILLIS_PER_INCH_ALLOWED = 600f;
     private static final String TAG = "SnappyManager";
     private int mDensityDpi;
@@ -55,6 +57,10 @@ public class SnappyLinearLayoutManager extends LinearLayoutManager implements Sn
         this.mDensityDpi = context.getResources().getDisplayMetrics().densityDpi;
     }
 
+    /**
+     * Sets the ratio between scroll velocity and fling velocity
+     * @param flingVelocityRatio the ratio used to calculate fling velocity
+     */
     public void setFlingVelocityRatio(float flingVelocityRatio) {
         mFlingVelocityRatio = flingVelocityRatio;
     }
