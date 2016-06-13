@@ -12,6 +12,7 @@ You can use classes like `SwipeGestureHelper`, `SnappyRecyclerView`, `SnappyLine
  
 Or, you can simply use this convenient `SnappingSwipingViewBuilder` class to save you some work.
 
+```java
     RecyclerView recyclerView = new SnappingSwipingViewBuilder(this)
                     .setAdapter(mAdapter)
                     .setHeadTailExtraMarginDp(17F)
@@ -19,6 +20,7 @@ Or, you can simply use this convenient `SnappingSwipingViewBuilder` class to sav
                     .setOnSwipeListener(this)
                     .setSnapMethod(SnappyLinearLayoutManager.SnappyLinearSmoothScroller.SNAP_CENTER)
                     .build();
+```
 
 TODOs
 =====
