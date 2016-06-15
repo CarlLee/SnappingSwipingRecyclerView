@@ -21,8 +21,16 @@ public class SnappingSwipingViewBuilder {
     private final MarginDecoration mMarginDecoration;
 
     public SnappingSwipingViewBuilder(Context context) {
+        this(context, null);
+    }
+
+    public SnappingSwipingViewBuilder(Context context, SnappyRecyclerView srv) {
         this.mDisplayMetrics = context.getResources().getDisplayMetrics();
-        this.mRecyclerView = new SnappyRecyclerView(context);
+        if(srv == null){
+            this.mRecyclerView = new SnappyRecyclerView(context);
+        } else {
+            this.mRecyclerView = srv;
+        }
         this.mSwipeGestureHelper = new SwipeGestureHelper(context);
         this.mSnappyLinearLayoutManager = new SnappyLinearLayoutManager(context,
                 LinearLayoutManager.HORIZONTAL, false);
@@ -142,6 +150,18 @@ public class SnappingSwipingViewBuilder {
      */
     public SnappingSwipingViewBuilder setRecoverAnimationDuration(long recoverAnimationDuration) {
         mSwipeGestureHelper.setRecoverAnimationDuration(recoverAnimationDuration);
+        return this;
+    }
+
+    /**
+     * Sets an {@link SwipeGestureAdapter} to tell SwipeGestureHelper if item views at given
+     * adapter position should be swiped at all, if it returns false, not haptic feedback nor
+     * swipe animation will be played even when user long-presses this item view.
+     * @param swipeGestureAdapter the {@link SwipeGestureAdapter} to set
+     * @return this for chaining calls
+     */
+    public SnappingSwipingViewBuilder setSwipeGestureAdapter(SwipeGestureAdapter swipeGestureAdapter) {
+        mSwipeGestureHelper.setSwipeGestureAdapter(swipeGestureAdapter);
         return this;
     }
 

@@ -40,6 +40,7 @@ public class SwipeGestureHelper implements View.OnTouchListener {
     private float mTouchStartY;
     private int mActivePointerIndex;
     private VelocityTracker mVelocityTracker;
+    private SwipeGestureAdapter mSwipeGestureAdapter;
 
     private View mSelectedView;
     private int mSelectedAdapterPos;
@@ -147,6 +148,16 @@ public class SwipeGestureHelper implements View.OnTouchListener {
 
     public void setOnSwipeListener(OnSwipeListener listener) {
         this.mOnSwipeListener = listener;
+    }
+
+    /**
+     * Sets an {@link SwipeGestureAdapter} to tell SwipeGestureHelper if item views at given
+     * adapter position should be swiped at all, if it returns false, not haptic feedback nor
+     * swipe animation will be played even when user long-presses this item view.
+     * @param swipeGestureAdapter the {@link SwipeGestureAdapter} to set
+     */
+    public void setSwipeGestureAdapter(SwipeGestureAdapter swipeGestureAdapter) {
+        mSwipeGestureAdapter = swipeGestureAdapter;
     }
 
     public void attachToRecyclerView(RecyclerView rv, ViewOnTouchDelegate delegate) {
@@ -386,6 +397,12 @@ public class SwipeGestureHelper implements View.OnTouchListener {
             if (mRecyclerView != null) {
                 RecyclerView rv = mRecyclerView;
                 View v = rv.findChildViewUnder(e.getX(), e.getY());
+                int adapterPos = rv.getChildAdapterPosition(v);
+                if (mSwipeGestureAdapter != null) {
+                    if(!mSwipeGestureAdapter.shouldSwipe(adapterPos)){
+                        return;
+                    }
+                }
                 if (v != null) {
                     mLongPressInAction = true;
                     mTouchStartX = e.getX();
@@ -397,8 +414,6 @@ public class SwipeGestureHelper implements View.OnTouchListener {
                         mSelectedAnimatorHolder.playAnimator(makeScaleAnimatorSet(mSelectedView,
                                 1.0F, 1.0F + mScaleAnimationOffset, mScaleAnimationDuration));
                     }
-
-                    int adapterPos = rv.getChildAdapterPosition(v);
                     mSelectedAdapterPos = adapterPos;
                     Log.d(TAG, "adapterPos: " + adapterPos);
 
